@@ -1,6 +1,7 @@
 package ru.afbtest.calculator.DTO;
 
-import org.springframework.cglib.core.Local;
+import ru.afbtest.calculator.DTO.Enums.Gender;
+import ru.afbtest.calculator.DTO.Enums.MaritalStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,15 +11,15 @@ public class ScoringDataDto {
     private Integer term;
     private String firstName;
     private String lastName;
-   // private Gender gender;
+    private Gender gender;
     private LocalDate birthdate;
     private String passportSeries;
     private String passportNumber;
     private LocalDate passportIssueDate;
     private String passportIssueBranch;
-   // private maritalStatus maritalStatus;
+    private MaritalStatus maritalStatus;
     private Integer dependentAmount;
- //   private EmploymentDto employment;
+    private EmploymentDto employment;
     private String accountNumber;
     private Boolean isInsuranceEnabled;
     private Boolean isSalaryClient;
