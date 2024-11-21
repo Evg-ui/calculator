@@ -1,4 +1,4 @@
-package ru.afbtest.calculator.DTO;
+package ru.afbtest.calculator.notUsed;
 
 import ru.afbtest.calculator.DTO.Enums.ChangeType;
 import ru.afbtest.calculator.DTO.Enums.Status;

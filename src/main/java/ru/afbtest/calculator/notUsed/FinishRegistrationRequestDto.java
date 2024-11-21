@@ -1,5 +1,6 @@
-package ru.afbtest.calculator.DTO;
+package ru.afbtest.calculator.notUsed;
 
+import ru.afbtest.calculator.DTO.EmploymentDto;
 import ru.afbtest.calculator.DTO.Enums.Gender;
 import ru.afbtest.calculator.DTO.Enums.MaritalStatus;
 
