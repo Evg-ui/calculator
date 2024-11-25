@@ -1,31 +1,27 @@
 package ru.afbtest.calculator;
 
-import lombok.ToString;
-import lombok.Value;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.afbtest.calculator.DTO.LoanOfferDto;
 import ru.afbtest.calculator.DTO.LoanStatementRequestDto;
+import ru.afbtest.calculator.DTO.ScoringDataDto;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import static org.apache.el.lang.ELArithmetic.divide;
 import static ru.afbtest.calculator.utils.PreScoring.amount_MIN;
 import static ru.afbtest.calculator.utils.PreScoring.term_MIN;
 
 @Service        // для обозначения класса как сервиса, который содержит бизнес-логику приложения
 public class CalculatorService {
+    @Value("${baseRate}")
     private BigDecimal baseRate;
 
-
-
-
+    // TODO: убрать прескоринг по классам своим
     /**********Это все для прескоринга***********/
     // наверно, это надо выносить в заявку или в прескоринг класс, иначе бардак вышел. Не выносится =(
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z]{2,30}$");
@@ -110,29 +106,88 @@ public class CalculatorService {
         List<LoanOfferDto> offersDto = new ArrayList<>();
         BigDecimal preMonthlyPayment, preTotalAmount, preRate;  // для предложений
 
-        /*Создание предложений*/
-        for (int i = 0; i < 4; i++) {
-            LoanOfferDto currentOffer = new LoanOfferDto();
-            currentOffer.setTerm(requestDto.getTerm());     // отдаем ставку кредита
-            currentOffer.setTotalAmount(requestDto.getAmount());    // отдаем величину кредита
-            currentOffer.setStatementId(UUID.randomUUID());     // отдаем гуид заявки
-            offersDto.add(currentOffer);
-                    }
         /*поочередно им рассчитываем показатели*/
+        BigDecimal baseRate = BigDecimal.valueOf(15);  // это убрать, должно из пропертис браться
+        preRate = baseRate.add(BigDecimal.valueOf(2));    // повышаем базовую ставку, если нет зп и нет страховки на 2%
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), baseRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
-       // calcLoanOffer(offersDto.get(0), false, false, baseRate, preMonthlyPayment, preTotalAmount);
-      //  offersDto.add(offersDto.setRate(baseRate).setLoanAmount(totalAmount).setOfferId("Offer1").build());
-        return offersDto;   }
+        LoanOfferDto current1 = LoanOfferDto.builder()
+                .isSalaryClient(false)
+                .isInsuranceEnabled(false)
+                .term(requestDto.getTerm())
+                .requestedAmount(requestDto.getAmount())
+                .rate(preRate)     // сохраняем базовую ставку, если нет зп и нет страховки
+                .term(requestDto.getTerm())
+                .totalAmount(preTotalAmount)
+                .monthlyPayment(preMonthlyPayment)
+                .statementId(UUID.randomUUID()) // Генерация случайного UUID
+                .build();
+        offersDto.add(current1);
+
+        preRate = baseRate.subtract(BigDecimal.valueOf(1));   // уменьшаем ставку на 1% клиенту с зп
+        preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
+        preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
+        LoanOfferDto current2 = LoanOfferDto.builder()
+                .isSalaryClient(true)
+                .isInsuranceEnabled(false)
+                .term(requestDto.getTerm())
+                .requestedAmount(requestDto.getAmount())
+                .rate(preRate)
+                .term(requestDto.getTerm())
+                .totalAmount(preTotalAmount)
+                .monthlyPayment(preMonthlyPayment)
+                .statementId(UUID.randomUUID())
+                .build();
+        offersDto.add(current2);
+
+        preRate = baseRate.add(BigDecimal.valueOf(1));   // повышаем ставку на 1% клиенту со страховкой и без зп
+        preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
+        preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
+        LoanOfferDto current3 = LoanOfferDto.builder()
+                .isSalaryClient(false)
+                .isInsuranceEnabled(true)
+                .term(requestDto.getTerm())
+                .requestedAmount(requestDto.getAmount())
+                .rate(preRate)
+                .term(requestDto.getTerm())
+                .totalAmount(preTotalAmount)
+                .monthlyPayment(preMonthlyPayment)
+                .statementId(UUID.randomUUID())
+                .build();
+        offersDto.add(current3);
+
+        preRate = baseRate.subtract(BigDecimal.valueOf(3));   // уменьшаем ставку на 3% клиенту со страховкой и c зп
+        preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
+        preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
+        LoanOfferDto current4 = LoanOfferDto.builder()
+                .isSalaryClient(true)
+                .isInsuranceEnabled(true)
+                .term(requestDto.getTerm())
+                .requestedAmount(requestDto.getAmount())
+                .rate(preRate)
+                .term(requestDto.getTerm())
+                .totalAmount(preTotalAmount)
+                .monthlyPayment(preMonthlyPayment)
+                .statementId(UUID.randomUUID())
+                .build();
+        offersDto.add(current4);
+
+        return offersDto;
+    }
 
     /*расчет ежемесячного платежа от суммы кредита, ставки и срока*/
-    public static BigDecimal calcMonthlyPayment(BigDecimal amount, BigDecimal rate, Integer term) {
+    public BigDecimal calcMonthlyPayment(BigDecimal amount, BigDecimal rate, Integer term) {
         BigDecimal monthlyRate = rate.divide(BigDecimal.valueOf(1200), MathContext.DECIMAL64); // Преобразование годовой ставки в месячную
         return monthlyRate.add(BigDecimal.ONE)
                 .pow(term)
                 .multiply(monthlyRate)
                 .divide(monthlyRate.add(BigDecimal.ONE).pow(term).subtract(BigDecimal.ONE), MathContext.DECIMAL64)
                 .multiply(amount);
+    }
+
+    // TODO: метод написать
+    public String ScoringCheck(ScoringDataDto request){
+        return "";
     }
 
 

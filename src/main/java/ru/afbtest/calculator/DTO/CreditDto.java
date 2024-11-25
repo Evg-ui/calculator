@@ -3,6 +3,7 @@ package ru.afbtest.calculator.DTO;
 import java.math.BigDecimal;
 import java.util.List;
 
+
 public class CreditDto {
     private BigDecimal amount;
     private Integer term;

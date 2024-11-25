@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,7 +44,6 @@ public class CalculatorController {
         calculatorService.preScoringCheck(requestDto);
         List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
         return new ResponseEntity<>(offers, HttpStatus.OK);   // в теле ответа будут офферы
-       // return List.of(); // придумать список предложений в зависимости от условий
     }
 
     // валидация присланных данных + скоринг данных + полный расчет параметров кредита.

@@ -1,11 +1,16 @@
 package ru.afbtest.calculator.DTO;
 
+import lombok.*;
 import ru.afbtest.calculator.DTO.Enums.Gender;
 import ru.afbtest.calculator.DTO.Enums.MaritalStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
+@Builder
+@ToString
 public class ScoringDataDto {
     private BigDecimal amount;
     private Integer term;
