@@ -23,6 +23,4 @@ public class ScoringDataDto {
     private String accountNumber;
     private Boolean isInsuranceEnabled;
     private Boolean isSalaryClient;
-
-
 }

@@ -1,7 +1,15 @@
 package ru.afbtest.calculator.DTO;
 
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.util.UUID;
+
+@Getter @Setter
+@Builder
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
 
 public class LoanOfferDto {
     private UUID statementId;
@@ -12,4 +20,5 @@ public class LoanOfferDto {
     private BigDecimal rate;
     private Boolean isInsuranceEnabled;
     private Boolean isSalaryClient;
+
 }

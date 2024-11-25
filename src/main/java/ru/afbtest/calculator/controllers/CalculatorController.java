@@ -1,7 +1,11 @@
 package ru.afbtest.calculator.controllers;
 
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +17,7 @@ import ru.afbtest.calculator.DTO.LoanStatementRequestDto;
 import ru.afbtest.calculator.DTO.ScoringDataDto;
 
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/calculator")
@@ -34,10 +39,13 @@ public class CalculatorController {
 
     // расчёт возможных условий кредита. Request - LoanStatementRequestDto, response - List<LoanOfferDto>
     @PostMapping("/offers")
-    public List<LoanOfferDto> calculateOffers(@RequestBody LoanStatementRequestDto request) {
+    public ResponseEntity<List<LoanOfferDto>> calculateOffers(@RequestBody LoanStatementRequestDto requestDto) {
         // Логика для расчета предложений кредита
-        // на вход заявка loanstatement, вызвыается сервис с прескорингом
-        return List.of(); // придумать список предложений
+        // на вход заявка loanstatement, вызывается сервис с прескорингом, в ответ отдаются 4 предложения
+        calculatorService.preScoringCheck(requestDto);
+        List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
+        return new ResponseEntity<>(offers, HttpStatus.OK);   // в теле ответа будут офферы
+       // return List.of(); // придумать список предложений в зависимости от условий
     }
 
     // валидация присланных данных + скоринг данных + полный расчет параметров кредита.

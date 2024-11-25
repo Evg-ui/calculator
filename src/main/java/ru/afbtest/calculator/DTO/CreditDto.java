@@ -12,4 +12,6 @@ public class CreditDto {
     private Boolean isInsuranceEnabled;
     private Boolean isSalaryClient;
     private List<PaymentScheduleElementDto> paymentSchedule;
+
+
 }
