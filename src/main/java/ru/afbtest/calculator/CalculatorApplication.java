@@ -15,7 +15,7 @@ import java.util.List;
 @SpringBootApplication
 public class CalculatorApplication {
 
-    public static void main(String[] args) throws ScoreException {
+    public static void main(String[] args) {
 
         //   SpringApplication.run(CalculatorApplication.class, args);
 
@@ -39,7 +39,7 @@ public class CalculatorApplication {
         BigDecimal rate = BigDecimal.valueOf(20);
         Integer term = 6;
         BigDecimal result = calculatorService.calcMonthlyPayment(amount, rate, term);
-        System.out.println("Ежемесячный  платеж составляет: " + calculatorService.calcMonthlyPayment(amount, rate, term));
+        System.out.println("Ежемесячный  платеж составляет: " + result);
 
         // проверка получения предложений
         List<LoanOfferDto> loanOffers = calculatorService.getLoanOffers(requestDto);
