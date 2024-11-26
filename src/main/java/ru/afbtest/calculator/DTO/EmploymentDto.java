@@ -1,9 +1,13 @@
 package ru.afbtest.calculator.DTO;
 
+import lombok.*;
 import ru.afbtest.calculator.DTO.Enums.EmploymentStatus;
 
 import javax.swing.text.Position;
 import java.math.BigDecimal;
+
+@Setter @Getter
+@ToString
 
 public class EmploymentDto {
     private EmploymentStatus employmentStatus;

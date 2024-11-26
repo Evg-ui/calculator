@@ -53,6 +53,7 @@ public class CalculatorController {
         // Логика для валидации, скоринга и расчета кредита
         // на выход 4 предложения: взывается сервис с расчетом
         CreditDto creditDto = new CreditDto();
+
         return creditDto;
     }
 

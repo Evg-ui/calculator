@@ -1,13 +1,20 @@
 package ru.afbtest.calculator;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.afbtest.calculator.DTO.LoanOfferDto;
 import ru.afbtest.calculator.DTO.LoanStatementRequestDto;
+import ru.afbtest.calculator.DTO.PaymentScheduleElementDto;
 import ru.afbtest.calculator.DTO.ScoringDataDto;
+import ru.afbtest.calculator.exception.ScoreException;
+import ru.afbtest.calculator.utils.Scoring;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +23,7 @@ import java.util.regex.Pattern;
 import static ru.afbtest.calculator.utils.PreScoring.amount_MIN;
 import static ru.afbtest.calculator.utils.PreScoring.term_MIN;
 
+@Slf4j
 @Service        // для обозначения класса как сервиса, который содержит бизнес-логику приложения
 public class CalculatorService {
     @Value("${baseRate}")
@@ -57,7 +65,7 @@ public class CalculatorService {
     // наверно, это надо выносить в заявку или в прескоринг класс, иначе бардак вышел
 
         /*Процесс прескоринга*/
-    public String preScoringCheck(LoanStatementRequestDto request){
+    public String preScoringCheck(LoanStatementRequestDto request) {
 
         if (!isValidName(request.getFirstName())) {
             return "Имя должно содержать от 2 до 30 латинских букв.";
@@ -76,7 +84,7 @@ public class CalculatorService {
 
         // Проверка срока кредита == -1 -  значит срок  меньше 6мес
         if (request.getTerm().compareTo(term_MIN) == -1) {
-            return "Срок кредита должен быть больше или равен 6 месяцев.";
+            return "Срок кредита должен быть больше или равен 6";
         }
 
 //        // Проверка даты рождения
@@ -100,7 +108,7 @@ public class CalculatorService {
         return "Проверка пройдена успешно"; // Все проверки пройдены
 
     }
-
+    // TODO: для предложений подобрать какие-нибудь поинтереснее условия
     /*формирование списка из 4 предложений, на вход - данные заявки, которая прошла прескоринг */
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto requestDto){
         List<LoanOfferDto> offersDto = new ArrayList<>();
@@ -185,10 +193,82 @@ public class CalculatorService {
                 .multiply(amount);
     }
 
-    // TODO: метод написать
-    public String ScoringCheck(ScoringDataDto request){
-        return "";
+    public List<PaymentScheduleElementDto> calcPaymentSchedule(BigDecimal amount,
+                                                               Integer term,
+                                                               BigDecimal rate,
+                                                               BigDecimal monthlyPayment)
+{
+    BigDecimal monthlyRate = rate.divide(BigDecimal.valueOf(1200), MathContext.DECIMAL64); // Преобразование годовой ставки в месячную
+    List<PaymentScheduleElementDto> result = new ArrayList<>();
+    PaymentScheduleElementDto pScheduleElement = new PaymentScheduleElementDto();
+    LocalDate payDate = LocalDate.now();
+    BigDecimal curAmount = amount; // для расчета остатка надо запоминать текущие суммы
+
+    for(int i =0; i < term; i++){
+        pScheduleElement = new PaymentScheduleElementDto();
+        pScheduleElement.setNumber(i+1);
+        pScheduleElement.setDate(payDate.plusMonths(i+1));
+        pScheduleElement.setTotalPayment(monthlyPayment.setScale(2, RoundingMode.HALF_UP));
+        pScheduleElement.setInterestPayment(curAmount.multiply(monthlyRate).setScale(2,RoundingMode.HALF_UP));
+        pScheduleElement.setDebtPayment(monthlyPayment.subtract(pScheduleElement.getInterestPayment()).setScale(2,RoundingMode.HALF_UP));
+        pScheduleElement.setRemainingDebt(curAmount.negate().subtract(pScheduleElement.getDebtPayment().setScale(2, RoundingMode.HALF_UP)));
+
+        /*уменьшаем основной долг на сумму уплаченного по графику*/
+        curAmount = curAmount.subtract(pScheduleElement.getDebtPayment());
+
+        result.add(pScheduleElement);
+        }
+
+    if (curAmount.setScale(2, RoundingMode.HALF_UP).compareTo(BigDecimal.ZERO) != 0) {
+        log.info("График рассчитан некорректно. Остаток долга: %s"
+                .formatted(curAmount.setScale(2, RoundingMode.HALF_UP).toString()));
     }
 
+    return result;
 
-}
+    }
+
+    public BigDecimal scoringCheck(ScoringDataDto scoringDataDto) throws ScoreException {
+
+        BigDecimal preRate = new BigDecimal(15);
+
+        /*Сумма займа больше, чем 24 зарплаты --> Отказ*/
+        if (scoringDataDto.getEmployment().getSalary().multiply(BigDecimal.valueOf(24)).compareTo(scoringDataDto.getAmount()) != 1)
+        {
+            throw new ScoreException("Сумма займа больше 24 зарплат. Отказано.");
+        }
+
+        /*Общий стаж менее 18 месяцев → Отказ*/
+        if (scoringDataDto.getEmployment().getWorkExperienceTotal() < 18)
+        {
+            throw new ScoreException("Общий стаж меньше требуемого. Отказано.");
+        }
+
+        /*Текущий стаж менее 3 месяцев → Отказ*/
+        if (scoringDataDto.getEmployment().getWorkExperienceCurrent() < 3)
+        {
+            throw new ScoreException("Стаж на текущем месте работы меньше требуемого. Отказано.");
+        }
+
+        /*Возраст менее 20 или более 65 лет → отказ*/
+        int age = Period.between(scoringDataDto.getBirthdate(), LocalDate.now()).getYears();
+        if (age < 20 || age > 65)
+            throw new ScoreException("Заявитель не соответствует возрастным рамкам. Отказано.");
+
+        /*Рабочий статус: Безработный → отказ; Самозанятый → ставка увеличивается на 2; Владелец бизнеса → ставка увеличивается на 1*/
+        preRate = preRate.add(Scoring.getEmploymentRate(scoringDataDto.getEmployment().getEmploymentStatus()));
+
+        // TODO: опять метод getPositionRate куда-то делся
+        /*Позиция на работе: Менеджер среднего звена → ставка уменьшается на 2; Топ-менеджер → ставка уменьшается на */
+       // preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
+
+        /*Семейное положение: Замужем/женат → ставка уменьшается на 3; Разведен → ставка увеличивается на 1*/
+        preRate = preRate.add(Scoring.getMaritalStatusRate(scoringDataDto.getMaritalStatus()));
+
+        /*Пол: Женщина, возраст от 32 до 60 лет → ставка уменьшается на 3;*/
+        /*Мужчина, возраст от 30 до 55 лет → ставка уменьшается на 3; Не бинарный → ставка увеличивается на 7*/
+        preRate = preRate.add(Scoring.getGenderAndAgeRate(scoringDataDto.getGender(), age));
+
+        return preRate;
+    }
+    }
