@@ -108,6 +108,8 @@ public class CalculatorService {
         return "Проверка пройдена успешно"; // Все проверки пройдены
 
     }
+
+
     // TODO: для предложений подобрать какие-нибудь поинтереснее условия
     /*формирование списка из 4 предложений, на вход - данные заявки, которая прошла прескоринг */
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto requestDto){
@@ -115,7 +117,6 @@ public class CalculatorService {
         BigDecimal preMonthlyPayment, preTotalAmount, preRate;  // для предложений
 
         /*поочередно им рассчитываем показатели*/
-        BigDecimal baseRate = BigDecimal.valueOf(15);  // это убрать, должно из пропертис браться
         preRate = baseRate.add(BigDecimal.valueOf(2));    // повышаем базовую ставку, если нет зп и нет страховки на 2%
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), baseRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
@@ -184,7 +185,9 @@ public class CalculatorService {
     }
 
     /*расчет ежемесячного платежа от суммы кредита, ставки и срока*/
-    public BigDecimal calcMonthlyPayment(BigDecimal amount, BigDecimal rate, Integer term) {
+    public BigDecimal calcMonthlyPayment(BigDecimal amount,
+                                         BigDecimal rate,
+                                         Integer term) {
         BigDecimal monthlyRate = rate.divide(BigDecimal.valueOf(1200), MathContext.DECIMAL64); // Преобразование годовой ставки в месячную
         return monthlyRate.add(BigDecimal.ONE)
                 .pow(term)
@@ -219,9 +222,16 @@ public class CalculatorService {
         result.add(pScheduleElement);
         }
 
-    if (curAmount.setScale(2, RoundingMode.HALF_UP).compareTo(BigDecimal.ZERO) != 0) {
+    // Проверяем остаток долга
+
+    if (curAmount.compareTo(BigDecimal.ZERO) != 0) {
         log.info("График рассчитан некорректно. Остаток долга: %s"
                 .formatted(curAmount.setScale(2, RoundingMode.HALF_UP).toString()));
+
+        // Добавляем остаток к последнему элементу графика
+        PaymentScheduleElementDto lastElement = result.get(result.size() - 1);
+        lastElement.setTotalPayment(lastElement.getTotalPayment().add(curAmount).setScale(2, RoundingMode.HALF_UP));
+        lastElement.setRemainingDebt(lastElement.getRemainingDebt().add(curAmount.negate()).setScale(2, RoundingMode.HALF_UP));
     }
 
     return result;
@@ -229,27 +239,23 @@ public class CalculatorService {
     }
 
     public BigDecimal scoringCheck(ScoringDataDto scoringDataDto) throws ScoreException {
-
-        BigDecimal preRate = new BigDecimal(15);
+        BigDecimal preRate = baseRate;
 
         /*Сумма займа больше, чем 24 зарплаты --> Отказ*/
         if (scoringDataDto.getEmployment().getSalary().multiply(BigDecimal.valueOf(24)).compareTo(scoringDataDto.getAmount()) != 1)
         {
             throw new ScoreException("Сумма займа больше 24 зарплат. Отказано.");
         }
-
         /*Общий стаж менее 18 месяцев → Отказ*/
         if (scoringDataDto.getEmployment().getWorkExperienceTotal() < 18)
         {
             throw new ScoreException("Общий стаж меньше требуемого. Отказано.");
         }
-
         /*Текущий стаж менее 3 месяцев → Отказ*/
         if (scoringDataDto.getEmployment().getWorkExperienceCurrent() < 3)
         {
             throw new ScoreException("Стаж на текущем месте работы меньше требуемого. Отказано.");
         }
-
         /*Возраст менее 20 или более 65 лет → отказ*/
         int age = Period.between(scoringDataDto.getBirthdate(), LocalDate.now()).getYears();
         if (age < 20 || age > 65)
@@ -260,7 +266,7 @@ public class CalculatorService {
 
         // TODO: опять метод getPositionRate куда-то делся
         /*Позиция на работе: Менеджер среднего звена → ставка уменьшается на 2; Топ-менеджер → ставка уменьшается на */
-       // preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
+        //preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
 
         /*Семейное положение: Замужем/женат → ставка уменьшается на 3; Разведен → ставка увеличивается на 1*/
         preRate = preRate.add(Scoring.getMaritalStatusRate(scoringDataDto.getMaritalStatus()));
@@ -268,7 +274,29 @@ public class CalculatorService {
         /*Пол: Женщина, возраст от 32 до 60 лет → ставка уменьшается на 3;*/
         /*Мужчина, возраст от 30 до 55 лет → ставка уменьшается на 3; Не бинарный → ставка увеличивается на 7*/
         preRate = preRate.add(Scoring.getGenderAndAgeRate(scoringDataDto.getGender(), age));
-
         return preRate;
+    }
+
+    BigDecimal calcPsk(BigDecimal amount, Integer term,
+                       List<PaymentScheduleElementDto> paymentSchedule){
+        log.info("Расчет ПСК...");
+
+       /*Суммируем все платежи из графика*/
+        BigDecimal totalPay = BigDecimal.ZERO;
+        for (int i = 0; i < paymentSchedule.size(); i++) {
+            totalPay = totalPay.add(paymentSchedule.get(i).getTotalPayment());
+                    }
+        System.out.println("Сумма всех платежей = " + totalPay);
+
+        /*месяцы в годы*/
+        BigDecimal termY = BigDecimal.valueOf(term).divide(BigDecimal.valueOf(12), 2, RoundingMode.CEILING);
+
+        /*ПСК*/
+        BigDecimal psk = totalPay.divide(amount, 2, RoundingMode.CEILING)
+                .subtract(BigDecimal.ONE).divide(termY, 3, RoundingMode.CEILING)
+                .multiply(BigDecimal.valueOf(100));
+
+        log.info("Расчет ПСК завершен!");
+        return amount;
     }
     }

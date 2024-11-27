@@ -2,6 +2,7 @@ package ru.afbtest.calculator.controllers;
 
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,8 @@ import ru.afbtest.calculator.DTO.ScoringDataDto;
 
 import java.util.List;
 
-
+@Tag(name = "Контроллер кредитного конвейера",
+        description = "Принимается заявка от пользователя для предварительного и полного расчета кредита")
 @RestController
 @RequestMapping("/calculator")
 public class CalculatorController {
@@ -46,6 +48,13 @@ public class CalculatorController {
         return new ResponseEntity<>(offers, HttpStatus.OK);   // в теле ответа будут офферы
     }
 
+
+        // TODO исправить под calc
+    // для документирования REST API, созданных с использованием Spring
+    @Operation(
+            summary = "На вход подается предварительная заявка на кредит",
+            description = "Ожидается" // написать что-то надо
+    )
     // валидация присланных данных + скоринг данных + полный расчет параметров кредита.
     // Request - ScoringDataDto, response CreditDto.
     @PostMapping("/calc")
