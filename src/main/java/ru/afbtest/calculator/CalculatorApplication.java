@@ -1,5 +1,8 @@
 package ru.afbtest.calculator;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,29 +18,35 @@ import java.time.LocalDate;
 import java.util.*;
 
 @SpringBootApplication
+@OpenAPIDefinition(
+        info = @Info(
+                title = "Микросервис Кредитный калькулятор",
+                description = "Прескоринг и скоринг кредита",
+                version = "v1"
+        )
+)
 public class CalculatorApplication {
 
     public static void main(String[] args) {
 
-        //   SpringApplication.run(CalculatorApplication.class, args);
+        SpringApplication.run(CalculatorApplication.class, args);
 
         // проверка прескоринга
-        CalculatorService calculatorService = new CalculatorService();
-        LoanStatementRequestDto requestDto = new LoanStatementRequestDto();
-        requestDto.setFirstName("Evgeniya");
-        requestDto.setLastName("Berezentseva");
-        requestDto.setMiddleName("Vladimirovna");
-        requestDto.setAmount(BigDecimal.valueOf(300000));
-        requestDto.setTerm(6);
-        requestDto.setBirthDate(LocalDate.parse("2024-12-01"));
-        requestDto.setEmail("mail.123@example.com");
-        requestDto.setPassportSeries("1255");
-        requestDto.setPassportNumber("567050");
-        calculatorService.preScoringCheck(requestDto);
-        System.out.println(calculatorService.preScoringCheck(requestDto));
+//        CalculatorService calculatorService = new CalculatorService();
+//        LoanStatementRequestDto requestDto = new LoanStatementRequestDto();
+//        requestDto.setFirstName("Evgeniya");
+//        requestDto.setLastName("Berezentseva");
+//        requestDto.setMiddleName("Vladimirovna");
+//        requestDto.setAmount(BigDecimal.valueOf(300000));
+//        requestDto.setTerm(6);
+//        requestDto.setBirthDate(LocalDate.parse("2000-12-01"));
+//        requestDto.setEmail("mail.123@example.com");
+//        requestDto.setPassportSeries("1255");
+//        requestDto.setPassportNumber("567050");
+//        calculatorService.preScoringCheck(requestDto);
 
         // проверка расчета ежемесячного платежа
-        BigDecimal amount = BigDecimal.valueOf(300000);
+       /* BigDecimal amount = BigDecimal.valueOf(300000);
         BigDecimal rate = BigDecimal.valueOf(20);
         Integer term = 6;
         BigDecimal result = calculatorService.calcMonthlyPayment(amount, rate, term);
@@ -91,8 +100,9 @@ public class CalculatorApplication {
 //        ScoringDataDto scoringDataDto = new ScoringDataDto();
 //        scoringDataDto.setBirthdate(LocalDate.parse("2001-12-01"));
 //        scoringDataDto.setMaritalStatus(MaritalStatus.MARRIED);
-//        calculatorService.scoringCheck(scoringDataDto);
+//        calculatorService.scoringCheck(scoringDataDto);*/
 
-       }
+    }
+}
 
 

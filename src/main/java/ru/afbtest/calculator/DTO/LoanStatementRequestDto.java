@@ -2,6 +2,7 @@ package ru.afbtest.calculator.DTO;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,6 +18,7 @@ public class LoanStatementRequestDto {
     private String lastName;
     private String middleName;
     private String email;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthDate;
     private String passportSeries;
     private String passportNumber;

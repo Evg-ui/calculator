@@ -15,10 +15,11 @@ import ru.afbtest.calculator.DTO.CreditDto;
 import ru.afbtest.calculator.DTO.LoanOfferDto;
 import ru.afbtest.calculator.DTO.LoanStatementRequestDto;
 import ru.afbtest.calculator.DTO.ScoringDataDto;
+import ru.afbtest.calculator.exception.ScoreException;
 
 import java.util.List;
 
-@Tag(name = "Контроллер кредитного конвейера",
+@Tag(name = "Контроллер кредитного калькулятора",
         description = "Принимается заявка от пользователя для предварительного и полного расчета кредита")
 @RestController
 @RequestMapping("/calculator")
@@ -34,15 +35,12 @@ public class CalculatorController {
 
     // для документирования REST API, созданных с использованием Spring
     @Operation(
-            summary = "На вход подается предварительная заявка на кредит",
-            description = "Ожидается" // написать что-то надо
-    )
+            summary = "Расчёт возможных условий кредита.",
+            description = "На вход подается заявка на кредит."     )
 
     // расчёт возможных условий кредита. Request - LoanStatementRequestDto, response - List<LoanOfferDto>
     @PostMapping("/offers")
     public ResponseEntity<List<LoanOfferDto>> calculateOffers(@RequestBody LoanStatementRequestDto requestDto) {
-        // Логика для расчета предложений кредита
-        // на вход заявка loanstatement, вызывается сервис с прескорингом, в ответ отдаются 4 предложения
         calculatorService.preScoringCheck(requestDto);
         List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
         return new ResponseEntity<>(offers, HttpStatus.OK);   // в теле ответа будут офферы
@@ -58,10 +56,12 @@ public class CalculatorController {
     // валидация присланных данных + скоринг данных + полный расчет параметров кредита.
     // Request - ScoringDataDto, response CreditDto.
     @PostMapping("/calc")
-    public CreditDto calculateCredit(@RequestBody ScoringDataDto scoringData) {
+    public CreditDto calculateCredit(@RequestBody ScoringDataDto scoringData) throws ScoreException {
         // Логика для валидации, скоринга и расчета кредита
         // на выход 4 предложения: взывается сервис с расчетом
         CreditDto creditDto = new CreditDto();
+        calculatorService.calcCredit(scoringData);
+
 
         return creditDto;
     }
