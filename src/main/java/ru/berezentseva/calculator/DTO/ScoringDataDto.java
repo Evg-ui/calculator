@@ -1,8 +1,8 @@
-package ru.afbtest.calculator.DTO;
+package ru.berezentseva.calculator.DTO;
 
 import lombok.*;
-import ru.afbtest.calculator.DTO.Enums.Gender;
-import ru.afbtest.calculator.DTO.Enums.MaritalStatus;
+import ru.berezentseva.calculator.DTO.Enums.Gender;
+import ru.berezentseva.calculator.DTO.Enums.MaritalStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

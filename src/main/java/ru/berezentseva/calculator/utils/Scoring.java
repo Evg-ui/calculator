@@ -1,10 +1,10 @@
-package ru.afbtest.calculator.utils;
+package ru.berezentseva.calculator.utils;
 
-import ru.afbtest.calculator.DTO.Enums.EmploymentStatus;
-import ru.afbtest.calculator.DTO.Enums.Gender;
-import ru.afbtest.calculator.DTO.Enums.MaritalStatus;
-import ru.afbtest.calculator.DTO.Enums.Position;
-import ru.afbtest.calculator.exception.ScoreException;
+import ru.berezentseva.calculator.DTO.Enums.EmploymentStatus;
+import ru.berezentseva.calculator.DTO.Enums.Gender;
+import ru.berezentseva.calculator.DTO.Enums.MaritalStatus;
+import ru.berezentseva.calculator.DTO.Enums.Position;
+import ru.berezentseva.calculator.exception.ScoreException;
 
 import java.math.BigDecimal;
 
@@ -54,7 +54,7 @@ public class Scoring {
     public static BigDecimal getGenderAndAgeRate(Gender gender, int age) throws ScoreException {
             switch (gender) {
             case MALE:
-                return (age >= 30 && age <= 55) ? BigDecimal.valueOf(-3) : BigDecimal.ZERO;   // попрообовать через if
+                return (age >= 30 && age <= 55) ? BigDecimal.valueOf(-3) : BigDecimal.ZERO;
             case FEMALE:
                 return (age >= 32 && age <= 60) ? BigDecimal.valueOf(-3) : BigDecimal.ZERO;
             case OTHER:

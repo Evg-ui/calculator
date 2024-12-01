@@ -1,4 +1,4 @@
-package ru.afbtest.calculator.DTO.Enums;
+package ru.berezentseva.calculator.DTO.Enums;
 
 public enum Position {
     WORKER,

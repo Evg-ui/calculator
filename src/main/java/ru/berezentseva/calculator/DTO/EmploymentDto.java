@@ -1,7 +1,7 @@
-package ru.afbtest.calculator.DTO;
+package ru.berezentseva.calculator.DTO;
 
 import lombok.*;
-import ru.afbtest.calculator.DTO.Enums.EmploymentStatus;
+import ru.berezentseva.calculator.DTO.Enums.EmploymentStatus;
 
 import javax.swing.text.Position;
 import java.math.BigDecimal;

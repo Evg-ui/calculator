@@ -1,5 +1,6 @@
-package ru.afbtest.calculator.DTO;
+package ru.berezentseva.calculator.DTO;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,4 +23,5 @@ public class LoanStatementRequestDto {
     private LocalDate birthDate;
     private String passportSeries;
     private String passportNumber;
-    }
+}
+

@@ -1,4 +1,4 @@
-package ru.afbtest.calculator.DTO;
+package ru.berezentseva.calculator.DTO;
 
 import lombok.*;
 

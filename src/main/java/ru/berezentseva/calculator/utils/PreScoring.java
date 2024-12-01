@@ -1,18 +1,19 @@
-package ru.afbtest.calculator.utils;
+package ru.berezentseva.calculator.utils;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import ru.afbtest.calculator.DTO.LoanStatementRequestDto;
-import ru.afbtest.calculator.exception.ScoreException;
+import lombok.extern.slf4j.Slf4j;
+import ru.berezentseva.calculator.DTO.LoanStatementRequestDto;
+import ru.berezentseva.calculator.exception.ScoreException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
 @Getter @Setter
 @ToString
+@Slf4j
 public class PreScoring {
 
 //    public static final String passportSeries_REGEX = "^(\\d{4})";
@@ -43,19 +44,19 @@ public class PreScoring {
 
     private void validateName(String firstName, String lastName, String middleName) throws ScoreException {
         if (!firstName.matches(firstName_REGEX)) {
-            throw new ScoreException("В имени должно быть от 2 до 30 символов на латинице. Введено значение:  %s");
+            throw new ScoreException("В имени должно быть от 2 до 30 символов на латинице. Введено значение:  {}");
         }
         if (!lastName.matches(lastName_REGEX)) {
-            throw new ScoreException("В фамилии должно быть от 2 до 30 символов на латинице. Введено значение:  %s");
+            throw new ScoreException("В фамилии должно быть от 2 до 30 символов на латинице. Введено значение:  {}");
         }
         if (!middleName.matches(middleName_REGEX)) {
-            throw new ScoreException("В отчестве должно быть от 2 до 30 символов на латинице. Введено значение:  %s");
+            throw new ScoreException("В отчестве должно быть от 2 до 30 символов на латинице. Введено значение:  {}");
         }
     }
 
     private void validateAmount(BigDecimal amount) throws ScoreException {
         if (amount.compareTo(amount_MIN) == -1) {
-            throw new ScoreException("Сумма кредита должна быть > = 20000. Введено значение: %s");
+            throw new ScoreException("Сумма кредита должна быть > = 20000. Введено значение: {}");
         }
     }
     private void validateTerm(int term) throws ScoreException {
