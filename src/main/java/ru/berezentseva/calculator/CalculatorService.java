@@ -22,19 +22,20 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service        // для обозначения класса как сервиса, который содержит бизнес-логику приложения
 public class CalculatorService {
-    @Value("${baseRate}")
-    public BigDecimal baseRate;
+    @Value(value = "${baseRate}")
+    private BigDecimal baseRate;
 
 
     // TODO: для предложений подобрать какие-нибудь поинтереснее условия
     /*формирование списка из 4 предложений, на вход - данные заявки, которая прошла прескоринг */
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto requestDto){
-        log.info("Расчет графика платежей...");
+        log.info("Расчет предложений для клиента...");
 
         List<LoanOfferDto> offersDto = new ArrayList<>();
-        BigDecimal preMonthlyPayment, preTotalAmount, preRate;  // для предложений
+        BigDecimal preMonthlyPayment, preTotalAmount, preRate;   // для предложений
 
         /*поочередно им рассчитываем показатели*/
+        log.info("Расчет 1го предложения...");
         preRate = baseRate.add(BigDecimal.valueOf(2));    // повышаем базовую ставку, если нет зп и нет страховки на 2%
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
@@ -51,6 +52,7 @@ public class CalculatorService {
                 .build();
         offersDto.add(current1);
 
+        log.info("Расчет 2го предложения...");
         preRate = baseRate.subtract(BigDecimal.valueOf(1));   // уменьшаем ставку на 1% клиенту с зп
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
@@ -67,6 +69,7 @@ public class CalculatorService {
                 .build();
         offersDto.add(current2);
 
+        log.info("Расчет 3го предложения...");
         preRate = baseRate.add(BigDecimal.valueOf(1));   // повышаем ставку на 1% клиенту со страховкой и без зп
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
@@ -83,6 +86,7 @@ public class CalculatorService {
                 .build();
         offersDto.add(current3);
 
+        log.info("Расчет 4го предложения...");
         preRate = baseRate.subtract(BigDecimal.valueOf(3));   // уменьшаем ставку на 3% клиенту со страховкой и c зп
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
@@ -99,7 +103,7 @@ public class CalculatorService {
                 .build();
         offersDto.add(current4);
 
-
+        log.info("Список предложений для клиента сформирован...");
         return offersDto.stream().sorted(Comparator.comparing(LoanOfferDto::getRate).reversed()).collect(Collectors.toList());
     }
 
@@ -107,29 +111,37 @@ public class CalculatorService {
     public BigDecimal calcMonthlyPayment(BigDecimal amount,
                                          BigDecimal rate,
                                          Integer term) {
+        log.info("Расчет ежемесячного платежа...");
         BigDecimal monthlyRate = rate.divide(BigDecimal.valueOf(1200), MathContext.DECIMAL64); // Преобразование годовой ставки в месячную
+
+        log.info("Расчет ежемесячного платежа закончен!");
         return monthlyRate.add(BigDecimal.ONE)              // monthlyrate + 1
                 .pow(term)                      // ^12
                 .multiply(monthlyRate)                  // *monthlyrate
                 .divide(monthlyRate.add(BigDecimal.ONE).pow(term).subtract(BigDecimal.ONE), MathContext.DECIMAL64)
                 .multiply(amount);                  // * amount
-
-    }
+            }
 
     public CreditDto calcCredit(ScoringDataDto scoringDataDto) throws ScoreException {
+        log.info("Расчет финального предложения");
         CreditDto creditDto = new CreditDto();
-        BigDecimal rate = scoringCheck(scoringDataDto);
-        creditDto.setAmount(scoringDataDto.getAmount());
-        creditDto.setTerm(scoringDataDto.getTerm());
-        creditDto.setMonthlyPayment(calcMonthlyPayment(scoringDataDto.getAmount(), rate, scoringDataDto.getTerm()));
-        creditDto.setRate(rate);
-        creditDto.setPsk(calcPsk(scoringDataDto.getAmount(), scoringDataDto.getTerm(),  creditDto.getPaymentSchedule()));
-        creditDto.setIsInsuranceEnabled(scoringDataDto.getIsInsuranceEnabled());
-        creditDto.setIsSalaryClient(scoringDataDto.getIsSalaryClient());
-        creditDto.setPaymentSchedule(calcPaymentSchedule(scoringDataDto.getAmount(),scoringDataDto.getTerm(),
-                rate, creditDto.getMonthlyPayment()));
+        try {
+            BigDecimal rate = scoringCheck(scoringDataDto);
+            creditDto.setAmount(scoringDataDto.getAmount());
+            creditDto.setTerm(scoringDataDto.getTerm());
+            creditDto.setMonthlyPayment(calcMonthlyPayment(scoringDataDto.getAmount(), rate, scoringDataDto.getTerm()));
+            creditDto.setRate(rate);
+            creditDto.setPsk(calcPsk(scoringDataDto.getAmount(), scoringDataDto.getTerm(), creditDto.getPaymentSchedule()));
+            creditDto.setIsInsuranceEnabled(scoringDataDto.getIsInsuranceEnabled());
+            creditDto.setIsSalaryClient(scoringDataDto.getIsSalaryClient());
+            creditDto.setPaymentSchedule(calcPaymentSchedule(scoringDataDto.getAmount(), scoringDataDto.getTerm(),
+                    rate, creditDto.getMonthlyPayment()));
 
-        System.out.println(creditDto);
+            System.out.println(creditDto);
+        } catch (ScoreException e)
+        {
+            log.info("Скоринг не рассчитан. Расчет кредита невозможен!", scoringDataDto);
+        }
         return creditDto;
     }
 
@@ -142,7 +154,7 @@ public class CalculatorService {
         for (int i = 0; i < paymentSchedule.size(); i++) {
             totalPay = totalPay.add(paymentSchedule.get(i).getTotalPayment());
         }
-        System.out.println("Сумма всех платежей = " + totalPay);
+        log.info("Сумма всех платежей = " + totalPay);
 
         /*месяцы в годы*/
         BigDecimal termY = BigDecimal.valueOf(term).divide(BigDecimal.valueOf(12), 2, RoundingMode.CEILING);
@@ -210,6 +222,7 @@ public class CalculatorService {
     }
 
     public BigDecimal scoringCheck(ScoringDataDto scoringDataDto) throws ScoreException {
+        log.info("Скоринг...");
         BigDecimal preRate = baseRate;
 
         /*Сумма займа больше, чем 24 зарплаты --> Отказ*/
@@ -245,6 +258,7 @@ public class CalculatorService {
         /*Пол: Женщина, возраст от 32 до 60 лет → ставка уменьшается на 3;*/
         /*Мужчина, возраст от 30 до 55 лет → ставка уменьшается на 3; Не бинарный → ставка увеличивается на 7*/
         preRate = preRate.add(Scoring.getGenderAndAgeRate(scoringDataDto.getGender(), age));
+        log.info("Скоринг завершен!");
         return preRate;
     }
 
