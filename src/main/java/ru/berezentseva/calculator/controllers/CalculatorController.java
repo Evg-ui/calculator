@@ -47,10 +47,15 @@ public class CalculatorController {
     @PostMapping("/offers")
 
     public ResponseEntity<List<LoanOfferDto>> calculateOffers(@RequestBody LoanStatementRequestDto requestDto) {
-        log.info("Метод  /calculator/offers. Запрос: {}", requestDto.toString());
-        calculatorService.preScoringCheck(requestDto);
-        List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
-        return new ResponseEntity<>(offers, HttpStatus.OK);
+        log.info("Метод  /calculator/offers. Request: {}", requestDto.toString());
+        try {
+            calculatorService.preScoringCheck(requestDto);
+            List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
+            return new ResponseEntity<>(offers, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            log.info("Ошибка заполнения формы. ", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     // для документирования REST API, созданных с использованием Spring
@@ -66,8 +71,7 @@ public class CalculatorController {
     public ResponseEntity<CreditDto> calculateCredit(@RequestBody ScoringDataDto scoringData) throws ScoreException {
         log.info("Метод  /calculator/calc Запрос: {}", scoringData.toString());
         try {
-        CreditDto creditDto = new CreditDto();
-        calculatorService.calcCredit(scoringData);
+        CreditDto creditDto = calculatorService.calcCredit(scoringData);
        return new ResponseEntity<>(creditDto, HttpStatus.OK);
         } catch (ScoreException e) {
             log.info(e.getMessage());

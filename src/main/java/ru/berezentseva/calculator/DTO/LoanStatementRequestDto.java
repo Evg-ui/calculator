@@ -1,16 +1,17 @@
 package ru.berezentseva.calculator.DTO;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 
 
 @Getter
 @Setter
+@ToString
+@NoArgsConstructor
 
 public class LoanStatementRequestDto {
     private BigDecimal amount;
@@ -19,9 +20,9 @@ public class LoanStatementRequestDto {
     private String lastName;
     private String middleName;
     private String email;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthDate;
     private String passportSeries;
     private String passportNumber;
+
 }
 

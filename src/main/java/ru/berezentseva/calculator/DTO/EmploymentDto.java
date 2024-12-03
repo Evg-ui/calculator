@@ -2,8 +2,8 @@ package ru.berezentseva.calculator.DTO;
 
 import lombok.*;
 import ru.berezentseva.calculator.DTO.Enums.EmploymentStatus;
+import ru.berezentseva.calculator.DTO.Enums.Position;
 
-import javax.swing.text.Position;
 import java.math.BigDecimal;
 
 @Setter @Getter

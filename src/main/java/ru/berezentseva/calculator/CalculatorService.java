@@ -21,15 +21,24 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service        // для обозначения класса как сервиса, который содержит бизнес-логику приложения
+
 public class CalculatorService {
+
+
     @Value(value = "${baseRate}")
     private BigDecimal baseRate;
+
+    public BigDecimal getBaseRate() {
+        return baseRate;
+    }
 
 
     // TODO: для предложений подобрать какие-нибудь поинтереснее условия
     /*формирование списка из 4 предложений, на вход - данные заявки, которая прошла прескоринг */
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto requestDto){
         log.info("Расчет предложений для клиента...");
+        BigDecimal baseRate = getBaseRate();
+
 
         List<LoanOfferDto> offersDto = new ArrayList<>();
         BigDecimal preMonthlyPayment, preTotalAmount, preRate;   // для предложений
@@ -198,7 +207,7 @@ public class CalculatorService {
 
     // Проверяем остаток долга
     if (curAmount.compareTo(BigDecimal.ZERO) != 0) {
-        log.info("График рассчитан некорректно. Остаток долга: %s"
+        log.info("График рассчитан некорректно. Остаток долга: {}"
                 .formatted(curAmount.setScale(2, RoundingMode.HALF_UP).toString()));
 
         // Добавляем остаток к последнему элементу графика
@@ -248,9 +257,8 @@ public class CalculatorService {
         /*Рабочий статус: Безработный → отказ; Самозанятый → ставка увеличивается на 2; Владелец бизнеса → ставка увеличивается на 1*/
         preRate = preRate.add(Scoring.getEmploymentRate(scoringDataDto.getEmployment().getEmploymentStatus()));
 
-        // TODO: опять метод getPositionRate куда-то делся
         /*Позиция на работе: Менеджер среднего звена → ставка уменьшается на 2; Топ-менеджер → ставка уменьшается на */
-        //preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
+        preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
 
         /*Семейное положение: Замужем/женат → ставка уменьшается на 3; Разведен → ставка увеличивается на 1*/
         preRate = preRate.add(Scoring.getMaritalStatusRate(scoringDataDto.getMaritalStatus()));
