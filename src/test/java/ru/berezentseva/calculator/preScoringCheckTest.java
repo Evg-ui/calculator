@@ -5,9 +5,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import ru.berezentseva.calculator.DTO.LoanStatementRequestDto;
+import ru.berezentseva.calculator.exception.ScoreException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class preScoringCheckTest {
 
@@ -50,7 +53,7 @@ class preScoringCheckTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -66,7 +69,7 @@ class preScoringCheckTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -82,7 +85,7 @@ class preScoringCheckTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -98,7 +101,7 @@ class preScoringCheckTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -113,7 +116,7 @@ class preScoringCheckTest {
         request.setEmail("mail.123@example.com");
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -128,7 +131,7 @@ class preScoringCheckTest {
         request.setEmail("mail.123@example.com");
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -144,7 +147,7 @@ class preScoringCheckTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -160,7 +163,7 @@ class preScoringCheckTest {
         request.setPassportSeries("12565");          // тут
         request.setPassportNumber("567050");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
     @Test
@@ -176,7 +179,7 @@ class preScoringCheckTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("56705");            // тут
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> calculatorService.preScoringCheck(request));
+        assertThrows(ScoreException.class, () -> calculatorService.preScoringCheck(request));
     }
 
 }

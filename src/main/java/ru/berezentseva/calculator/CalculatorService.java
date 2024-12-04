@@ -24,22 +24,17 @@ import java.util.stream.Collectors;
 
 public class CalculatorService {
 
-
-    @Value(value = "${baseRate}")
     private BigDecimal baseRate;
 
-    public BigDecimal getBaseRate() {
-        return baseRate;
+    @Value(value = "${baseRate}")
+    public void setBaseRate(BigDecimal baseRate) {
+        this.baseRate = baseRate;
     }
-
 
     // TODO: для предложений подобрать какие-нибудь поинтереснее условия
     /*формирование списка из 4 предложений, на вход - данные заявки, которая прошла прескоринг */
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto requestDto){
         log.info("Расчет предложений для клиента...");
-        BigDecimal baseRate = getBaseRate();
-
-
         List<LoanOfferDto> offersDto = new ArrayList<>();
         BigDecimal preMonthlyPayment, preTotalAmount, preRate;   // для предложений
 
@@ -149,7 +144,7 @@ public class CalculatorService {
             System.out.println(creditDto);
         } catch (ScoreException e)
         {
-            log.info("Скоринг не рассчитан. Расчет кредита невозможен!", scoringDataDto);
+                throw new ScoreException("Скоринг не рассчитан. Расчет кредита невозможен!");
         }
         return creditDto;
     }
@@ -163,7 +158,7 @@ public class CalculatorService {
         for (int i = 0; i < paymentSchedule.size(); i++) {
             totalPay = totalPay.add(paymentSchedule.get(i).getTotalPayment());
         }
-        log.info("Сумма всех платежей = " + totalPay);
+        log.info("Сумма всех платежей = " + totalPay.toString());
 
         /*месяцы в годы*/
         BigDecimal termY = BigDecimal.valueOf(term).divide(BigDecimal.valueOf(12), 2, RoundingMode.CEILING);
@@ -207,8 +202,8 @@ public class CalculatorService {
 
     // Проверяем остаток долга
     if (curAmount.compareTo(BigDecimal.ZERO) != 0) {
-        log.info("График рассчитан некорректно. Остаток долга: {}"
-                .formatted(curAmount.setScale(2, RoundingMode.HALF_UP).toString()));
+        log.info("График рассчитан некорректно. Остаток долга: "  +
+                        curAmount.setScale(2, RoundingMode.HALF_UP).toString());
 
         // Добавляем остаток к последнему элементу графика
         PaymentScheduleElementDto lastElement = result.get(result.size() - 1);
@@ -219,14 +214,14 @@ public class CalculatorService {
     }
 
     /*Процесс прескоринга*/
-    public void preScoringCheck(LoanStatementRequestDto request) {
-        log.info("Прескоринг...", request);
+    public void preScoringCheck(LoanStatementRequestDto request) throws ScoreException {
+        log.info("Прескоринг...", request.toString());
         PreScoring preScoring = new PreScoring();
         try {
             preScoring.validate(request);
             log.info("Прескоринг успешен!");
         } catch (ScoreException e) {
-            log.info("Ошибка прескоринга: " + e.getMessage());
+            throw new ScoreException("Ошибка прескоринга: " + e.getMessage().toString());
         }
     }
 
@@ -269,8 +264,4 @@ public class CalculatorService {
         log.info("Скоринг завершен!");
         return preRate;
     }
-
-
-
-
     }

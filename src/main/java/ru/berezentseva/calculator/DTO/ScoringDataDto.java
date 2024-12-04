@@ -30,3 +30,4 @@ public class ScoringDataDto {
     private Boolean isInsuranceEnabled;
     private Boolean isSalaryClient;
 }
+

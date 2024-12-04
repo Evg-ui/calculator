@@ -23,6 +23,5 @@ public class LoanStatementRequestDto {
     private LocalDate birthDate;
     private String passportSeries;
     private String passportNumber;
-
 }
 

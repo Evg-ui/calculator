@@ -47,14 +47,15 @@ public class CalculatorController {
     @PostMapping("/offers")
 
     public ResponseEntity<List<LoanOfferDto>> calculateOffers(@RequestBody LoanStatementRequestDto requestDto) {
-        log.info("Метод  /calculator/offers. Request: {}", requestDto.toString());
+        log.info("Метод  /calculator/offers. Request: {}", requestDto);
         try {
             calculatorService.preScoringCheck(requestDto);
             List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
             return new ResponseEntity<>(offers, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ScoreException e) {
             log.info("Ошибка заполнения формы. ", e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
         }
     }
 
@@ -68,7 +69,7 @@ public class CalculatorController {
     // валидация присланных данных + скоринг данных + полный расчет параметров кредита.
     // Request - ScoringDataDto, response - CreditDto.
     @PostMapping("/calc")
-    public ResponseEntity<CreditDto> calculateCredit(@RequestBody ScoringDataDto scoringData) throws ScoreException {
+    public ResponseEntity<CreditDto> calculateCredit(@RequestBody ScoringDataDto scoringData) {
         log.info("Метод  /calculator/calc Запрос: {}", scoringData.toString());
         try {
         CreditDto creditDto = calculatorService.calcCredit(scoringData);
@@ -78,6 +79,5 @@ public class CalculatorController {
             return ResponseEntity.unprocessableEntity().header("error", e.getMessage()).build();
         }
     }
-
-
 }
+

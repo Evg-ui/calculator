@@ -1,62 +1,46 @@
 package ru.berezentseva.calculator;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import ru.berezentseva.calculator.DTO.*;
-import ru.berezentseva.calculator.DTO.Enums.Gender;
-import ru.berezentseva.calculator.DTO.Enums.MaritalStatus;
 import ru.berezentseva.calculator.exception.ScoreException;
-import ru.berezentseva.calculator.utils.Scoring;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class)
 
-//@SpringBootTest
+@SpringBootTest
 class CalculatorServiceTest {
-
-    @Value(value = "${baseRate}")
-    private BigDecimal baseRate;
-
- //
- //  @Autowired
-//
-//    @Mock
-//    private BigDecimal baseRate;
 
 
     @InjectMocks
     private CalculatorService calculatorService;
 
-
     @BeforeEach
     public void setup() {
-        calculatorService = new CalculatorService();
+      calculatorService.setBaseRate(BigDecimal.valueOf(20));
     }
 
-   @Test
-   public void testBaseRate() {
-       // Проверка, что значение baseRate соответствует ожидаемому
-       assertEquals(new BigDecimal("15"), baseRate);
-     //  assertNotNull(baseRate, "null");
-   }
+
+    @Value("${baseRate}")
+    private BigDecimal baseRate;
 
     @Test
     public void calcMonthlyPaymentTest() {
@@ -208,14 +192,16 @@ class CalculatorServiceTest {
     // запрос суммы кредита > 24 зарплат
     @Test
     public void testScoringCheck24Salaries(){
-        BigDecimal preRate = BigDecimal.valueOf(15);
         BigDecimal amount = BigDecimal.valueOf(300000);
         BigDecimal salary = BigDecimal.valueOf(10000);
+
         ScoringDataDto scoringDataDto = new ScoringDataDto();
+        scoringDataDto.setAmount(amount);
 
         // Информация о занятости
         EmploymentDto employment = new EmploymentDto();
         employment.setSalary(salary);
+
         scoringDataDto.setEmployment(employment);
 
         ScoreException thrown = Assertions.assertThrows(ScoreException.class, () -> {
@@ -224,14 +210,50 @@ class CalculatorServiceTest {
        assertEquals("Сумма займа больше 24 зарплат. Отказано.", thrown.getMessage());
     }
 
-    // на текущем месте менее 3 месяцев
+
+    // общий стаж менее 18 месяцев
     @Test
-    public void testScoringCheckExperienceCurLessThan3Months() throws ScoreException {
-        int experienceCur = 2;
+    public void testScoringCheckExperienceTotalLessThan18Months(){
+        BigDecimal amount = BigDecimal.valueOf(300000);     // для запуска нужны эти 2 показателя
+        BigDecimal salary = BigDecimal.valueOf(100000);
+
+        int experienceTotal = 13;      // прооверка этого показателя
+
         ScoringDataDto scoringDataDto = new ScoringDataDto();
+        scoringDataDto.setAmount(amount);
+
         // Информация о занятости
         EmploymentDto employment = new EmploymentDto();
+        employment.setSalary(salary);
+        employment.setWorkExperienceTotal(experienceTotal);
+
+        scoringDataDto.setEmployment(employment);
+
+        ScoreException thrown = assertThrows(ScoreException.class, () -> {
+            calculatorService.scoringCheck(scoringDataDto);
+        });
+        assertEquals("Общий стаж меньше требуемого. Отказано.", thrown.getMessage());
+    //    assertNotNull(thrown.getMessage());
+    }
+
+    // на текущем месте менее 3 месяцев
+    @Test
+    public void testScoringCheckExperienceCurLessThan3Months(){
+        int experienceTotal = 20;       // для запуска нужны эти 3 показателя
+        BigDecimal amount = BigDecimal.valueOf(300000);
+        BigDecimal salary = BigDecimal.valueOf(100000);
+
+        int experienceCur = 2;      // прооверка этого показателя
+
+        ScoringDataDto scoringDataDto = new ScoringDataDto();
+        scoringDataDto.setAmount(amount);
+
+        // Информация о занятости
+        EmploymentDto employment = new EmploymentDto();
+        employment.setSalary(salary);
         employment.setWorkExperienceCurrent(experienceCur);
+        employment.setWorkExperienceTotal(experienceTotal);
+
         scoringDataDto.setEmployment(employment);
 
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
@@ -240,41 +262,52 @@ class CalculatorServiceTest {
         assertEquals("Стаж на текущем месте работы меньше требуемого. Отказано.", thrown.getMessage());
     }
 
-    // общий стаж менее 18 месяцев
-    @Test
-    public void testScoringCheckExperienceTotalLessThan18Months() throws ScoreException {
-        int experienceTotal = 13;
-        ScoringDataDto scoringDataDto = new ScoringDataDto();
-        // Информация о занятости
-        EmploymentDto employment = new EmploymentDto();
-        employment.setWorkExperienceTotal(experienceTotal);
-        scoringDataDto.setEmployment(employment);
-
-        ScoreException thrown = assertThrows(ScoreException.class, () -> {
-            calculatorService.scoringCheck(scoringDataDto);
-        });
-       // assertEquals("Общий стаж меньше требуемого. Отказано.", thrown.getMessage());
-        assertNotNull(thrown.getMessage());
-    }
-
     // тест на возраст
     @Test
     public void testScoringCheckAgeMoreThan65(){
+        int experienceTotal = 20;       // для запуска нужны эти 4 показателя
+        int experienceCur = 6;
+        BigDecimal amount = new BigDecimal(20000);
+        BigDecimal salary = new BigDecimal(5000);
+
         ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setBirthdate(LocalDate.now().minusYears(66));
+        scoringDataDto.setAmount(amount);       //для запуска
+        scoringDataDto.setBirthdate(LocalDate.now().minusYears(67));
+
+
+        // Информация о занятости
+        EmploymentDto employment = new EmploymentDto();
+        employment.setSalary(salary);
+        employment.setWorkExperienceCurrent(experienceCur);
+        employment.setWorkExperienceTotal(experienceTotal);
+
+        scoringDataDto.setEmployment(employment);
 
         // Проверяем, что метод выбрасывает исключение
-        ScoreException thrown = Assertions.assertThrows(ScoreException.class, () -> {
+        ScoreException thrown = assertThrows(ScoreException.class, () -> {
             calculatorService.scoringCheck(scoringDataDto);
         });
-
-        Assertions.assertEquals("Заявитель не соответствует возрастным рамкам. Отказано.", thrown.getMessage());
+        assertEquals("Заявитель не соответствует возрастным рамкам. Отказано.", thrown.getMessage());
     }
 
     @Test
-    public void testScoringCheckAgeLessThan20(){
+    public void testScoringCheckAgeLessThan20() throws ScoreException {
+        int experienceTotal = 20;       // для запуска нужны эти 4 показателя
+        int experienceCur = 6;
+        BigDecimal amount = new BigDecimal(300000);
+        BigDecimal salary = new BigDecimal(30000);
+
         ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setBirthdate(LocalDate.now().minusYears(19));
+        scoringDataDto.setAmount(amount);       //для запуска
+        scoringDataDto.setBirthdate(LocalDate.now().minusYears(18));
+
+        // Информация о занятости
+        EmploymentDto employment = new EmploymentDto();
+        employment.setSalary(salary);
+        employment.setWorkExperienceCurrent(experienceCur);
+        employment.setWorkExperienceTotal(experienceTotal);
+
+        scoringDataDto.setEmployment(employment);
 
         // Проверяем, что метод выбрасывает исключение
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
@@ -285,11 +318,9 @@ class CalculatorServiceTest {
     }
 
     @Test
-    public void testGetLoanOffers() {
-      //  CalculatorService calculatorService = new CalculatorService();
-        BigDecimal baseRate = BigDecimal.valueOf(15);
-
+    public void testGetLoanOffersFourElements() {
         LoanStatementRequestDto request = new LoanStatementRequestDto();
+
         request.setFirstName("Evgeniya");
         request.setLastName("Berezentseva");
         request.setMiddleName("Vladimirovna");
@@ -300,9 +331,13 @@ class CalculatorServiceTest {
         request.setPassportSeries("1255");
         request.setPassportNumber("567050");
 
+       // BigDecimal baseRate = calculatorService.getBaseRate();
         // Выполнение метода
-        List<LoanOfferDto> offers = calculatorService.getLoanOffers(request);;
-
+        log.info("Start getLoanOffers...");
+        log.info(baseRate.toString());
+        List<LoanOfferDto> offers = calculatorService.getLoanOffers(request);
+        log.info("Stop getLoanOffers...");
+      //  BigDecimal baseRate = calculatorService.getBaseRate();
       //  offers = calculatorService.getLoanOffers(request);
 
         // Проверка результатов

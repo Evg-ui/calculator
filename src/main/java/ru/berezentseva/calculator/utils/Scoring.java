@@ -63,13 +63,4 @@ public class Scoring {
               throw new ScoreException("Неизвестный пол");
         }
     }
-
-//    public static BigDecimal getWorkExperience(int workExperienceTotal, int workExperienceCurrent) throws ScoreException {
-//        if (workExperienceTotal < 18 || workExperienceCurrent < 3) {
-//            throw new ScoreException("Стаж не соответствует установленным ограничениям.");
-//        } else {
-//            return BigDecimal.ZERO;
-//        }
-//    }
-
 }
