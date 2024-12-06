@@ -175,7 +175,7 @@ public static final BigDecimal baseRate = BigDecimal.valueOf(15);
 
         // повторно пересчитываем
         totalDebt = BigDecimal.ZERO;
-        curAmount = amount;
+
         for (PaymentScheduleElementDto pElement : result) {
             totalDebt = totalDebt.add(pElement.getDebtPayment().setScale(2, RoundingMode.HALF_UP));
 
