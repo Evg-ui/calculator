@@ -161,7 +161,7 @@ public class CalculatorService {
         for (int i = 0; i < paymentSchedule.size(); i++) {
             totalPay = totalPay.add(paymentSchedule.get(i).getTotalPayment());
         }
-        log.info("Сумма всех платежей = " + totalPay.toString());
+        log.info("Сумма всех платежей = " + totalPay);
 
         /*месяцы в годы*/
         BigDecimal termY = BigDecimal.valueOf(term).divide(BigDecimal.valueOf(12), 2, RoundingMode.CEILING);
@@ -206,7 +206,7 @@ public class CalculatorService {
     // Проверяем остаток долга
     if (curAmount.compareTo(BigDecimal.ZERO) != 0) {
         log.info("График рассчитан некорректно. Остаток долга: "  +
-                        curAmount.setScale(2, RoundingMode.HALF_UP).toString());
+                curAmount.setScale(2, RoundingMode.HALF_UP));
 
         // Добавляем остаток к последнему элементу графика
         PaymentScheduleElementDto lastElement = result.get(result.size() - 1);
@@ -261,7 +261,6 @@ public class CalculatorService {
                 log.info("Заявитель не соответствует возрастным рамкам. Отказано.");
                 throw new ScoreException("The applicant does not meet the age requirements. Denied.");
             }
-            ;
             /*Некорректный ИНН работодателя*/
             try {
                 scoring.validateInn(scoringDataDto.getEmployment().getEmployerINN());

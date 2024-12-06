@@ -37,7 +37,7 @@ public class PreScoring {
 
     private void validateAmount(BigDecimal amount) throws ScoreException {
         if (amount.compareTo(amount_MIN) == -1) {
-            throw new ScoreException("Сумма кредита должна быть > = 20000. Введено значение: " + amount.toString());
+            throw new ScoreException("Сумма кредита должна быть > = 20000. Введено значение: " + amount);
         }
     }
 
@@ -50,10 +50,10 @@ public class PreScoring {
     private void validateName(String firstName, String lastName, String middleName) throws ScoreException {
 
         if (!firstName.matches(firstName_REGEX)) {
-            throw new ScoreException("В имени должно быть от 2 до 30 символов на латинице. Введено значение: " + firstName.toString());
+            throw new ScoreException("В имени должно быть от 2 до 30 символов на латинице. Введено значение: " + firstName);
         }
         if (!lastName.matches(lastName_REGEX)) {
-            throw new ScoreException("В фамилии должно быть от 2 до 30 символов на латинице. Введено значение: " + lastName.toString());
+            throw new ScoreException("В фамилии должно быть от 2 до 30 символов на латинице. Введено значение: " + lastName);
         }
 
         if (middleName == null) {
@@ -61,13 +61,13 @@ public class PreScoring {
         }
 
         if (!middleName.matches(middleName_REGEX)) {
-            throw new ScoreException("В отчестве должно быть от 2 до 30 символов на латинице. Введено значение: " + middleName.toString());
+            throw new ScoreException("В отчестве должно быть от 2 до 30 символов на латинице. Введено значение: " + middleName);
         }
     }
 
     private void validateEmail(String email) throws ScoreException {
         if (!email.matches(email_REGEX)) {
-            throw new ScoreException("Некорректный формат email. Введено значение: " + email.toString());
+            throw new ScoreException("Некорректный формат email. Введено значение: " + email);
         }
     }
 
@@ -79,10 +79,10 @@ public class PreScoring {
 
     private void validatePassport(String passportSeries, String passportNumber) throws ScoreException {
         if (!passportSeries.matches(passportSeries_REGEX)) {
-            throw new ScoreException("Серия паспорта должна содержать 4 цифры. Введено значение: " + passportSeries.toString());
+            throw new ScoreException("Серия паспорта должна содержать 4 цифры. Введено значение: " + passportSeries);
         }
         if (!passportNumber.matches(passportNumber_REGEX)) {
-            throw new ScoreException("Номер паспорта должен содержать 6 цифр. Введено значение: " + passportNumber.toString());
+            throw new ScoreException("Номер паспорта должен содержать 6 цифр. Введено значение: " + passportNumber);
         }
     }
 }

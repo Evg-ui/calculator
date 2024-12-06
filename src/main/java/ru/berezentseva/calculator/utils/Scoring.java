@@ -16,7 +16,7 @@ public class Scoring {
 
     public void validateInn(String inn) throws ScoreException {
         if (!inn.matches(inn_REGEX)) {
-            throw new ScoreException("INN must contain from 9 to 12 digits: " + inn.toString());
+            throw new ScoreException("INN must contain from 9 to 12 digits: " + inn);
         }
     }
 
