@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.berezentseva.calculator.DTO.*;
@@ -17,7 +16,6 @@ import ru.berezentseva.calculator.exception.ScoreException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class CalculatorServiceTest {
 
+public static final BigDecimal baseRate = BigDecimal.valueOf(15);
 
     @InjectMocks
     private CalculatorService calculatorService;
@@ -39,8 +38,8 @@ class CalculatorServiceTest {
     }
 
 
-    @Value("${baseRate}")
-    private BigDecimal baseRate;
+//    @Value("${baseRate}")
+//    private BigDecimal baseRate;
 
     @Test
     public void calcMonthlyPaymentTest() {
@@ -195,27 +194,31 @@ class CalculatorServiceTest {
         BigDecimal amount = BigDecimal.valueOf(300000);
         BigDecimal salary = BigDecimal.valueOf(10000);
 
+        String inn = "123457890";
+
         ScoringDataDto scoringDataDto = new ScoringDataDto();
         scoringDataDto.setAmount(amount);
 
         // Информация о занятости
         EmploymentDto employment = new EmploymentDto();
         employment.setSalary(salary);
+        employment.setEmployerINN(inn);
 
         scoringDataDto.setEmployment(employment);
 
         ScoreException thrown = Assertions.assertThrows(ScoreException.class, () -> {
             calculatorService.scoringCheck(scoringDataDto);
         });
-       assertEquals("Сумма займа больше 24 зарплат. Отказано.", thrown.getMessage());
+       assertEquals("Credit's sum is more than 24 salaries. Denied.", thrown.getMessage());
     }
 
 
     // общий стаж менее 18 месяцев
     @Test
     public void testScoringCheckExperienceTotalLessThan18Months(){
-        BigDecimal amount = BigDecimal.valueOf(300000);     // для запуска нужны эти 2 показателя
+        BigDecimal amount = BigDecimal.valueOf(300000);     // для запуска нужны эти 3 показателя
         BigDecimal salary = BigDecimal.valueOf(100000);
+        String inn = "1234567890";
 
         int experienceTotal = 13;      // прооверка этого показателя
 
@@ -226,22 +229,24 @@ class CalculatorServiceTest {
         EmploymentDto employment = new EmploymentDto();
         employment.setSalary(salary);
         employment.setWorkExperienceTotal(experienceTotal);
+        employment.setEmployerINN(inn);
 
         scoringDataDto.setEmployment(employment);
 
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
             calculatorService.scoringCheck(scoringDataDto);
         });
-        assertEquals("Общий стаж меньше требуемого. Отказано.", thrown.getMessage());
+        assertEquals("Total Experience less then 18 months. Denied.", thrown.getMessage());
     //    assertNotNull(thrown.getMessage());
     }
 
     // на текущем месте менее 3 месяцев
     @Test
     public void testScoringCheckExperienceCurLessThan3Months(){
-        int experienceTotal = 20;       // для запуска нужны эти 3 показателя
+        int experienceTotal = 20;       // для запуска нужны эти 4 показателя
         BigDecimal amount = BigDecimal.valueOf(300000);
         BigDecimal salary = BigDecimal.valueOf(100000);
+        String inn = "1234567890";
 
         int experienceCur = 2;      // прооверка этого показателя
 
@@ -253,13 +258,14 @@ class CalculatorServiceTest {
         employment.setSalary(salary);
         employment.setWorkExperienceCurrent(experienceCur);
         employment.setWorkExperienceTotal(experienceTotal);
+        employment.setEmployerINN(inn);
 
         scoringDataDto.setEmployment(employment);
 
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
             calculatorService.scoringCheck(scoringDataDto);
         });
-        assertEquals("Стаж на текущем месте работы меньше требуемого. Отказано.", thrown.getMessage());
+        assertEquals("Current Experience less then 3 months. Denied.", thrown.getMessage());
     }
 
     // тест на возраст
@@ -267,6 +273,8 @@ class CalculatorServiceTest {
     public void testScoringCheckAgeMoreThan65(){
         int experienceTotal = 20;       // для запуска нужны эти 4 показателя
         int experienceCur = 6;
+
+        String inn = "123456789";
         BigDecimal amount = new BigDecimal(20000);
         BigDecimal salary = new BigDecimal(5000);
 
@@ -280,6 +288,7 @@ class CalculatorServiceTest {
         employment.setSalary(salary);
         employment.setWorkExperienceCurrent(experienceCur);
         employment.setWorkExperienceTotal(experienceTotal);
+        employment.setEmployerINN(inn);
 
         scoringDataDto.setEmployment(employment);
 
@@ -287,13 +296,15 @@ class CalculatorServiceTest {
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
             calculatorService.scoringCheck(scoringDataDto);
         });
-        assertEquals("Заявитель не соответствует возрастным рамкам. Отказано.", thrown.getMessage());
+        assertEquals("The applicant does not meet the age requirements. Denied.", thrown.getMessage());
     }
 
     @Test
     public void testScoringCheckAgeLessThan20() throws ScoreException {
-        int experienceTotal = 20;       // для запуска нужны эти 4 показателя
+        int experienceTotal = 20;       // для запуска нужны эти 5 показателей
         int experienceCur = 6;
+
+        String inn = "123456789";
         BigDecimal amount = new BigDecimal(300000);
         BigDecimal salary = new BigDecimal(30000);
 
@@ -303,6 +314,7 @@ class CalculatorServiceTest {
 
         // Информация о занятости
         EmploymentDto employment = new EmploymentDto();
+        employment.setEmployerINN(inn);
         employment.setSalary(salary);
         employment.setWorkExperienceCurrent(experienceCur);
         employment.setWorkExperienceTotal(experienceTotal);
@@ -314,7 +326,7 @@ class CalculatorServiceTest {
             calculatorService.scoringCheck(scoringDataDto);
         });
 
-        assertEquals("Заявитель не соответствует возрастным рамкам. Отказано.", thrown.getMessage());
+        assertEquals("The applicant does not meet the age requirements. Denied.", thrown.getMessage());
     }
 
     @Test

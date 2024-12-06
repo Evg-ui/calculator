@@ -5,7 +5,6 @@ import ru.berezentseva.calculator.DTO.Enums.EmploymentStatus;
 import ru.berezentseva.calculator.DTO.Enums.Gender;
 import ru.berezentseva.calculator.DTO.Enums.MaritalStatus;
 import ru.berezentseva.calculator.DTO.Enums.Position;
-import ru.berezentseva.calculator.DTO.ScoringDataDto;
 import ru.berezentseva.calculator.exception.ScoreException;
 
 import java.math.BigDecimal;
@@ -59,24 +58,18 @@ class ScoringTest {
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
             getEmploymentRate(EmploymentStatus.UNEMPLOYED);
         });
-        assertEquals("Отказ по статусу \"Безработный\"", thrown.getMessage());
-    }
-
-    @Test
-    // тут дополнительно выбросим исключение безработным
-    public void testUnemployedReturnsDeniedException() throws ScoreException {
-        ScoringDataDto scoringDataDto = new ScoringDataDto();
-        EmploymentStatus status = EmploymentStatus.UNEMPLOYED;
-        assertThrows(IllegalArgumentException.class, () -> Scoring.getEmploymentRate(status));
+        assertEquals("Denied by status \"UNEMPLOYED\"", thrown.getMessage());
     }
 
     @Test
     // тут дополнительно выбросим исключение по неизвестным статусам
-    public void testUnemployedReturnsException() throws ScoreException {
-        ScoringDataDto scoringDataDto = new ScoringDataDto();
-        EmploymentStatus status = EmploymentStatus.UNKNOWN;
-        assertThrows(IllegalArgumentException.class, () -> Scoring.getEmploymentRate(status));
+    public void testUnemployedReturnsDeniedException() throws ScoreException {
+        ScoreException thrown = assertThrows(ScoreException.class, () -> {
+            getEmploymentRate(EmploymentStatus.UNKNOWN);
+        });
+        assertEquals("Unknown employment status.", thrown.getMessage());
     }
+
 
     /*Семейное положение*/
     @Test

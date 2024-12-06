@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static ru.berezentseva.calculator.utils.Scoring.inn_REGEX;
+
 @Slf4j
 @Service        // для обозначения класса как сервиса, который содержит бизнес-логику приложения
 
@@ -31,7 +33,6 @@ public class CalculatorService {
         this.baseRate = baseRate;
     }
 
-    // TODO: для предложений подобрать какие-нибудь поинтереснее условия
     /*формирование списка из 4 предложений, на вход - данные заявки, которая прошла прескоринг */
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto requestDto){
         log.info("Расчет предложений для клиента...");
@@ -74,7 +75,7 @@ public class CalculatorService {
         offersDto.add(current2);
 
         log.info("Расчет 3го предложения...");
-        preRate = baseRate.add(BigDecimal.valueOf(1));   // повышаем ставку на 1% клиенту со страховкой и без зп
+        preRate = baseRate;   // сохраняем ставку клиенту со страховкой и без зп
         preMonthlyPayment = this.calcMonthlyPayment(requestDto.getAmount(), preRate, requestDto.getTerm());
         preTotalAmount = preMonthlyPayment.multiply(BigDecimal.valueOf(requestDto.getTerm()));
         LoanOfferDto current3 = LoanOfferDto.builder()
@@ -117,8 +118,8 @@ public class CalculatorService {
                                          Integer term) {
         log.info("Расчет ежемесячного платежа...");
         BigDecimal monthlyRate = rate.divide(BigDecimal.valueOf(1200), MathContext.DECIMAL64); // Преобразование годовой ставки в месячную
-
         log.info("Расчет ежемесячного платежа закончен!");
+
         return monthlyRate.add(BigDecimal.ONE)              // monthlyrate + 1
                 .pow(term)                      // ^12
                 .multiply(monthlyRate)                  // *monthlyrate
@@ -133,18 +134,20 @@ public class CalculatorService {
             BigDecimal rate = scoringCheck(scoringDataDto);
             creditDto.setAmount(scoringDataDto.getAmount());
             creditDto.setTerm(scoringDataDto.getTerm());
-            creditDto.setMonthlyPayment(calcMonthlyPayment(scoringDataDto.getAmount(), rate, scoringDataDto.getTerm()));
             creditDto.setRate(rate);
-            creditDto.setPsk(calcPsk(scoringDataDto.getAmount(), scoringDataDto.getTerm(), creditDto.getPaymentSchedule()));
+            creditDto.setMonthlyPayment(calcMonthlyPayment(scoringDataDto.getAmount(), rate, scoringDataDto.getTerm()));
             creditDto.setIsInsuranceEnabled(scoringDataDto.getIsInsuranceEnabled());
             creditDto.setIsSalaryClient(scoringDataDto.getIsSalaryClient());
             creditDto.setPaymentSchedule(calcPaymentSchedule(scoringDataDto.getAmount(), scoringDataDto.getTerm(),
                     rate, creditDto.getMonthlyPayment()));
+            creditDto.setPsk(calcPsk(scoringDataDto.getAmount(), scoringDataDto.getTerm(), creditDto.getPaymentSchedule()));
 
             System.out.println(creditDto);
         } catch (ScoreException e)
         {
-                throw new ScoreException("Скоринг не рассчитан. Расчет кредита невозможен!");
+           // log.info("Скоринг не рассчитан. Расчет кредита невозможен!");
+             //   throw new ScoreException("The scoring was disrupted. Credit's calculation is impossible!");
+            throw e;
         }
         return creditDto;
     }
@@ -221,47 +224,72 @@ public class CalculatorService {
             preScoring.validate(request);
             log.info("Прескоринг успешен!");
         } catch (ScoreException e) {
-            throw new ScoreException("Ошибка прескоринга: " + e.getMessage().toString());
+            log.info("Ошибка прескоринга: " + e.getMessage());
+            throw e;
         }
     }
 
     public BigDecimal scoringCheck(ScoringDataDto scoringDataDto) throws ScoreException {
         log.info("Скоринг...");
-        BigDecimal preRate = baseRate;
+        try {
+            BigDecimal preRate = baseRate;
+            Scoring scoring = new Scoring();
 
-        /*Сумма займа больше, чем 24 зарплаты --> Отказ*/
-        if (scoringDataDto.getEmployment().getSalary().multiply(BigDecimal.valueOf(24)).compareTo(scoringDataDto.getAmount()) != 1)
-        {
-            throw new ScoreException("Сумма займа больше 24 зарплат. Отказано.");
+            /*Некорректный ИНН*/
+            if (!scoringDataDto.getEmployment().getEmployerINN().matches(inn_REGEX)) {
+                throw new ScoreException("INN must contain from 9 to 12 digits. ");
+            }
+
+            /*Сумма займа больше, чем 24 зарплаты --> Отказ*/
+            if (scoringDataDto.getEmployment().getSalary().multiply(BigDecimal.valueOf(24)).compareTo(scoringDataDto.getAmount()) != 1) {
+                log.info("Сумма займа больше 24 зарплат. Отказано.");
+                throw new ScoreException("Credit's sum is more than 24 salaries. Denied.");
+            }
+            /*Общий стаж менее 18 месяцев → Отказ*/
+            if (scoringDataDto.getEmployment().getWorkExperienceTotal() < 18) {
+                log.info("Общий стаж меньше требуемого. Отказано.");
+                throw new ScoreException("Total Experience less then 18 months. Denied.");
+            }
+            /*Текущий стаж менее 3 месяцев → Отказ*/
+            if (scoringDataDto.getEmployment().getWorkExperienceCurrent() < 3) {
+                log.info("Стаж на текущем месте работы меньше требуемого. Отказано.");
+                throw new ScoreException("Current Experience less then 3 months. Denied.");
+            }
+            /*Возраст менее 20 или более 65 лет → отказ*/
+            int age = Period.between(scoringDataDto.getBirthdate(), LocalDate.now()).getYears();
+            if (age < 20 || age > 65) {
+                log.info("Заявитель не соответствует возрастным рамкам. Отказано.");
+                throw new ScoreException("The applicant does not meet the age requirements. Denied.");
+            }
+            ;
+            /*Некорректный ИНН работодателя*/
+            try {
+                scoring.validateInn(scoringDataDto.getEmployment().getEmployerINN());
+            } catch(ScoreException e){
+                log.info("Ошибка скоринга: " + e.getMessage());
+                throw e;
+            }
+
+            /*Рабочий статус: Безработный → отказ; Самозанятый → ставка увеличивается на 2; Владелец бизнеса → ставка увеличивается на 1*/
+            preRate = preRate.add(Scoring.getEmploymentRate(scoringDataDto.getEmployment().getEmploymentStatus()));
+
+            /*Позиция на работе: Менеджер среднего звена → ставка уменьшается на 2; Топ-менеджер → ставка уменьшается на */
+            preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
+
+            /*Семейное положение: Замужем/женат → ставка уменьшается на 3; Разведен → ставка увеличивается на 1*/
+            preRate = preRate.add(Scoring.getMaritalStatusRate(scoringDataDto.getMaritalStatus()));
+
+            /*Пол: Женщина, возраст от 32 до 60 лет → ставка уменьшается на 3;*/
+            /*Мужчина, возраст от 30 до 55 лет → ставка уменьшается на 3; Не бинарный → ставка увеличивается на 7*/
+            preRate = preRate.add(Scoring.getGenderAndAgeRate(scoringDataDto.getGender(), age));
+            log.info("Скоринг завершен!");
+            return preRate;
         }
-        /*Общий стаж менее 18 месяцев → Отказ*/
-        if (scoringDataDto.getEmployment().getWorkExperienceTotal() < 18)
-        {
-            throw new ScoreException("Общий стаж меньше требуемого. Отказано.");
+        catch(ScoreException e){
+                log.info("The scoring was disrupted.");
+                log.info(e.getMessage());
+                throw e;
         }
-        /*Текущий стаж менее 3 месяцев → Отказ*/
-        if (scoringDataDto.getEmployment().getWorkExperienceCurrent() < 3)
-        {
-            throw new ScoreException("Стаж на текущем месте работы меньше требуемого. Отказано.");
         }
-        /*Возраст менее 20 или более 65 лет → отказ*/
-        int age = Period.between(scoringDataDto.getBirthdate(), LocalDate.now()).getYears();
-        if (age < 20 || age > 65)
-            throw new ScoreException("Заявитель не соответствует возрастным рамкам. Отказано.");
-
-        /*Рабочий статус: Безработный → отказ; Самозанятый → ставка увеличивается на 2; Владелец бизнеса → ставка увеличивается на 1*/
-        preRate = preRate.add(Scoring.getEmploymentRate(scoringDataDto.getEmployment().getEmploymentStatus()));
-
-        /*Позиция на работе: Менеджер среднего звена → ставка уменьшается на 2; Топ-менеджер → ставка уменьшается на */
-        preRate = preRate.add(Scoring.getPositionRate(scoringDataDto.getEmployment().getPosition()));
-
-        /*Семейное положение: Замужем/женат → ставка уменьшается на 3; Разведен → ставка увеличивается на 1*/
-        preRate = preRate.add(Scoring.getMaritalStatusRate(scoringDataDto.getMaritalStatus()));
-
-        /*Пол: Женщина, возраст от 32 до 60 лет → ставка уменьшается на 3;*/
-        /*Мужчина, возраст от 30 до 55 лет → ставка уменьшается на 3; Не бинарный → ставка увеличивается на 7*/
-        preRate = preRate.add(Scoring.getGenderAndAgeRate(scoringDataDto.getGender(), age));
-        log.info("Скоринг завершен!");
-        return preRate;
     }
-    }
+

@@ -7,8 +7,18 @@ import ru.berezentseva.calculator.DTO.Enums.Position;
 import ru.berezentseva.calculator.exception.ScoreException;
 
 import java.math.BigDecimal;
+import java.util.regex.Pattern;
+
 
 public class Scoring {
+
+    public static final String inn_REGEX =  Pattern.compile("^\\d{9,12}$").toString();
+
+    public void validateInn(String inn) throws ScoreException {
+        if (!inn.matches(inn_REGEX)) {
+            throw new ScoreException("INN must contain from 9 to 12 digits: " + inn.toString());
+        }
+    }
 
     public static BigDecimal getEmploymentRate(EmploymentStatus status) throws ScoreException {
         switch (status) {
@@ -19,9 +29,9 @@ public class Scoring {
             case BUSINESSOWNER:
                 return BigDecimal.ONE;
             case UNEMPLOYED:
-                   throw new ScoreException("Отказ по статусу \"Безработный\"");
+                   throw new ScoreException("Denied by status \"UNEMPLOYED\"");
             default:
-                   throw new ScoreException("Неизвестный статус");
+                   throw new ScoreException("Unknown employment status.");
         }
     }
 
@@ -60,7 +70,7 @@ public class Scoring {
             case OTHER:
                 return BigDecimal.valueOf(7);
             default:
-              throw new ScoreException("Неизвестный пол");
+              throw new ScoreException("Unknown gender.");
         }
     }
 }

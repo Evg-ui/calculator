@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.berezentseva.calculator.CalculatorService;
 import ru.berezentseva.calculator.DTO.CreditDto;
 import ru.berezentseva.calculator.DTO.LoanOfferDto;
@@ -46,16 +43,17 @@ public class CalculatorController {
     // расчёт возможных условий кредита. Request - LoanStatementRequestDto, response - List<LoanOfferDto>
     @PostMapping("/offers")
 
-    public ResponseEntity<List<LoanOfferDto>> calculateOffers(@RequestBody LoanStatementRequestDto requestDto) {
-        log.info("Метод  /calculator/offers. Request: {}", requestDto);
+    public ResponseEntity<?> calculateOffers(@RequestBody LoanStatementRequestDto requestDto) {
+        log.info("Метод  /calculator/offers. Request: ", requestDto.toString());
         try {
             calculatorService.preScoringCheck(requestDto);
             List<LoanOfferDto> offers = calculatorService.getLoanOffers(requestDto);
             return new ResponseEntity<>(offers, HttpStatus.OK);
-        } catch (IllegalArgumentException | ScoreException e) {
-            log.info("Ошибка заполнения формы. ", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-
+        } catch (ScoreException | IllegalArgumentException e) {
+            log.error("Ошибка заполнения формы. ", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
         }
     }
 
@@ -70,13 +68,16 @@ public class CalculatorController {
     // Request - ScoringDataDto, response - CreditDto.
     @PostMapping("/calc")
     public ResponseEntity<CreditDto> calculateCredit(@RequestBody ScoringDataDto scoringData) {
-        log.info("Метод  /calculator/calc Запрос: {}", scoringData.toString());
+        log.info("Метод /calculator/calc Запрос: {}", scoringData.toString());
         try {
         CreditDto creditDto = calculatorService.calcCredit(scoringData);
        return new ResponseEntity<>(creditDto, HttpStatus.OK);
         } catch (ScoreException e) {
-            log.info(e.getMessage());
-            return ResponseEntity.unprocessableEntity().header("error", e.getMessage()).build();
+            log.error(e.getMessage());
+            return ResponseEntity
+                    .unprocessableEntity()
+                    .header("Error", e.getMessage())
+                    .build();
         }
     }
 }

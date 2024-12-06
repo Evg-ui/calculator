@@ -2,11 +2,12 @@ package ru.berezentseva.calculator.DTO;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-
+@ToString
 @Getter @Setter
 public class CreditDto {
     private BigDecimal amount;
