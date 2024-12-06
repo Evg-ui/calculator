@@ -153,7 +153,7 @@ public static final BigDecimal baseRate = BigDecimal.valueOf(15);
     // проверяем, что в графике сумма основного долга суммарно не превышает сумму кредита(с учетом остатка долга)
     public void testCalcPaymentScheduleReturnsSumRemainingPaysEqualsAmount(){
         List<PaymentScheduleElementDto> result;
-        PaymentScheduleElementDto pScheduleElement = new PaymentScheduleElementDto();
+       // PaymentScheduleElementDto pScheduleElement = new PaymentScheduleElementDto();
 
         BigDecimal amount = BigDecimal.valueOf(300000);
         Integer term = 6;
@@ -180,7 +180,7 @@ public static final BigDecimal baseRate = BigDecimal.valueOf(15);
             totalDebt = totalDebt.add(pElement.getDebtPayment().setScale(2, RoundingMode.HALF_UP));
 
         }
-        curAmount = curAmount.subtract(totalDebt.setScale(2, RoundingMode.HALF_UP));
+       // curAmount = curAmount.subtract(totalDebt.setScale(2, RoundingMode.HALF_UP));
 
         assertEquals(amount.setScale(2, RoundingMode.HALF_UP), totalDebt.setScale(2, RoundingMode.HALF_UP));
     }
@@ -299,7 +299,7 @@ public static final BigDecimal baseRate = BigDecimal.valueOf(15);
     }
 
     @Test
-    public void testScoringCheckAgeLessThan20() throws ScoreException {
+    public void testScoringCheckAgeLessThan20()  {
         int experienceTotal = 20;       // для запуска нужны эти 5 показателей
         int experienceCur = 6;
 

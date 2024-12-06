@@ -63,7 +63,7 @@ class ScoringTest {
 
     @Test
     // тут дополнительно выбросим исключение по неизвестным статусам
-    public void testUnemployedReturnsDeniedException() throws ScoreException {
+    public void testUnemployedReturnsDeniedException()  {
         ScoreException thrown = assertThrows(ScoreException.class, () -> {
             getEmploymentRate(EmploymentStatus.UNKNOWN);
         });
